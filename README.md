@@ -8,8 +8,8 @@
 
 ## Updates
 
-#### **USART Implementation**
-  In the folder `./custom_libs` there's a implementation (somehow hardcoded ...) of USART comunication using only ISR (*no polling*) and freeRTOS API.
+##### **USART Implementation**
+  In the folder `./custom_libs` there's a implementation (somehow hardcoded ...) of USART comunication using only ISR (**no polling**) and freeRTOS API.
 
 
 
