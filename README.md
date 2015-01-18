@@ -1,11 +1,15 @@
 # Intro
   This is my template to work with freeRTOS on STM32F429 just with a **Makefile** and **ARM gcc** on a
-  **linux environment** (thanks to Winfred Lu, take a look at [references](https://github.com/sousapedro596/stm32f429-freertos800#references).
+  **linux environment** (thanks to Winfred Lu, take a look at [references](https://github.com/sousapedro596/stm32f429-freertos800#references)).
 
-## *Updates*
 
-### **USART Implementation**
-  In the folder ~~./custom_libs~~ there's a implementation (somehow hardcoded ...) of USART comunication using only ISR (Interrupt Service Routines), *no polling* and freeRTOS API.
+
+
+
+## Updates
+
+#### **USART Implementation**
+  In the folder `./custom_libs` there's a implementation (somehow hardcoded ...) of USART comunication using only ISR (*no polling*) and freeRTOS API.
 
 
 
