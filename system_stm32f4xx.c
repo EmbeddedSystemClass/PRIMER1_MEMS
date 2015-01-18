@@ -122,15 +122,15 @@
 #if defined  (PLL_SOURCE_HSI)
 #define PLL_M      16
 #else
-#define PLL_M      8
+#define PLL_M      4
 #endif
-#define PLL_N      360
+#define PLL_N      216
 
 /* SYSCLK = PLL_VCO / PLL_P */
-#define PLL_P      2
+#define PLL_P      6
 
 /* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ */
-#define PLL_Q      7
+#define PLL_Q      9
 
 /******************************************************************************/
 
@@ -152,7 +152,7 @@
   * @{
   */
 
-  uint32_t SystemCoreClock = 180000000;
+  uint32_t SystemCoreClock = 72000000;
 
   __I uint8_t AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
 

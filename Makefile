@@ -12,8 +12,9 @@ STDP ?= ../STM32F429I-Discovery_FW_V1.0.1
 # set the path to FreeRTOS package
 RTOS ?= ../FreeRTOSV8.0.0
 
-# set the path to uGFX package
-UGFX ?= ../ugfx
+# set the custom libs directory!!
+CUSTOMLIBS ?= ./custom_libs
+
 
 # Toolchain configurations
 CROSS_COMPILE ?= arm-none-eabi-
@@ -58,36 +59,24 @@ LDFLAGS += -T stm32f429zi_flash.ld
 
 # Project source
 CFLAGS += -I.
-SIMPLE_LED_OBJS = \
-    main-led.o \
-    ParTest.o \
-    port.o \
-    system_stm32f4xx.o
-LCD_OBJS = \
-    main-lcd.o \
-    ParTest.o \
-    port.o \
-    timertest.o \
-    system_stm32f4xx.o
-UGFX_BASIC_OBJS = \
-    gdisp_lld_ILI9341.o \
-    main-ugfx-basic.o \
-    ParTest.o \
-    port.o \
-    timertest.o \
-    system_stm32f4xx.o
-UGFX_OBJS = \
-    gdisp_lld_ILI9341.o \
-    ginput_lld_mouse.o \
-    main-ugfx.o \
+
+MAIN_OBJS = \
+    main.o \
     ParTest.o \
     port.o \
     timertest.o \
     system_stm32f4xx.o
 
+# Custom Libraries directory
+CFLAGS += -I$(CUSTOMLIBS)/inc
+
+#Here include all *.o needed from libraries to your current project
+MAIN_OBJS += \
+	$(CUSTOMLIBS)/src/usart_RTOS.o
+
 # Startup file
 SIMPLE_LED_OBJS += startup_stm32f429_439xx.o
-LCD_OBJS += startup_stm32f429_439xx.o
+MAIN_OBJS += startup_stm32f429_439xx.o
 UGFX_BASIC_OBJS += startup_stm32f429_439xx.o
 UGFX_OBJS += startup_stm32f429_439xx.o
 
@@ -98,67 +87,38 @@ CFLAGS += -I$(STDP)/Libraries/CMSIS/Include
 # STM32F4xx_StdPeriph_Driver
 CFLAGS += -DUSE_STDPERIPH_DRIVER
 CFLAGS += -I$(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/inc
-SIMPLE_LED_OBJS += \
+
+MAIN_OBJS += \
     $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/misc.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma2d.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_fmc.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_i2c.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_ltdc.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_usart.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.o \
     $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_exti.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.o
-LCD_OBJS += \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/misc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma2d.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_fmc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_i2c.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_ltdc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.o
-UGFX_BASIC_OBJS += \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/misc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma2d.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_fmc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_ltdc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.o
-UGFX_OBJS += \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/misc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dma2d.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_fmc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_i2c.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_ltdc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_gpio.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_rcc.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_spi.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.o
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_syscfg.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_adc.o
+
+
 
 # STM32F429I-Discovery Utilities
 CFLAGS += -I$(STDP)/Utilities/STM32F429I-Discovery
 CFLAGS += -I$(STDP)/Utilities/Common
-LCD_OBJS += \
+MAIN_OBJS += \
     $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_lcd.o \
     $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_sdram.o
-UGFX_BASIC_OBJS += \
-    $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_lcd.o \
-    $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_sdram.o
-UGFX_OBJS += \
-    $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_ioe.o \
-    $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_lcd.o \
-    $(STDP)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_sdram.o
+
 
 # FreeRTOS
 CFLAGS += -I$(RTOS)/FreeRTOS/Source/include
 CFLAGS += -I$(RTOS)/FreeRTOS/Source/portable/GCC/ARM_CM4F
 CFLAGS += -I$(RTOS)/FreeRTOS/Demo/Common/include
-SIMPLE_LED_OBJS += \
-    $(RTOS)/FreeRTOS/Source/list.o \
-    $(RTOS)/FreeRTOS/Source/queue.o \
-    $(RTOS)/FreeRTOS/Source/tasks.o \
-    $(RTOS)/FreeRTOS/Source/portable/MemMang/heap_1.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/flash.o
-LCD_OBJS += \
+
+MAIN_OBJS += \
     $(RTOS)/FreeRTOS/Source/list.o \
     $(RTOS)/FreeRTOS/Source/queue.o \
     $(RTOS)/FreeRTOS/Source/tasks.o \
@@ -172,102 +132,15 @@ LCD_OBJS += \
     $(RTOS)/FreeRTOS/Demo/Common/Minimal/QPeek.o \
     $(RTOS)/FreeRTOS/Demo/Common/Minimal/semtest.o \
     $(RTOS)/FreeRTOS/Demo/Common/Minimal/recmutex.o
-UGFX_BASIC_OBJS += \
-    $(RTOS)/FreeRTOS/Source/list.o \
-    $(RTOS)/FreeRTOS/Source/queue.o \
-    $(RTOS)/FreeRTOS/Source/tasks.o \
-    $(RTOS)/FreeRTOS/Source/timers.o \
-    $(RTOS)/FreeRTOS/Source/portable/MemMang/heap_1.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/flash.o
-UGFX_OBJS += \
-    $(RTOS)/FreeRTOS/Source/list.o \
-    $(RTOS)/FreeRTOS/Source/queue.o \
-    $(RTOS)/FreeRTOS/Source/tasks.o \
-    $(RTOS)/FreeRTOS/Source/timers.o \
-    $(RTOS)/FreeRTOS/Source/portable/MemMang/heap_1.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/flash.o
 
-# uGFX
-CFLAGS += -I$(UGFX)
-CFLAGS += -I$(UGFX)/src/gdisp/mcufont
-UGFX_BASIC_OBJS += \
-    $(UGFX)/src/gfx.o \
-    $(UGFX)/src/gdisp/gdisp.o \
-    $(UGFX)/src/gdisp/mcufont/mf_encoding.o \
-    $(UGFX)/src/gdisp/mcufont/mf_font.o \
-    $(UGFX)/src/gdisp/mcufont/mf_justify.o \
-    $(UGFX)/src/gdisp/mcufont/mf_scaledfont.o \
-    $(UGFX)/src/gdisp/mcufont/mf_rlefont.o \
-    $(UGFX)/src/gevent/gevent.o \
-    $(UGFX)/src/gos/freertos.o \
-    $(UGFX)/src/gwin/gwin.o \
-    $(UGFX)/src/gwin/gwm.o
-UGFX_OBJS += \
-    $(UGFX)/src/gfx.o \
-    $(UGFX)/src/gdisp/fonts.o \
-    $(UGFX)/src/gdisp/gdisp.o \
-    $(UGFX)/src/gdisp/mcufont/mf_encoding.o \
-    $(UGFX)/src/gdisp/mcufont/mf_font.o \
-    $(UGFX)/src/gdisp/mcufont/mf_justify.o \
-    $(UGFX)/src/gdisp/mcufont/mf_scaledfont.o \
-    $(UGFX)/src/gdisp/mcufont/mf_rlefont.o \
-    $(UGFX)/src/gevent/gevent.o \
-    $(UGFX)/src/ginput/ginput.o \
-    $(UGFX)/src/ginput/mouse.o \
-    $(UGFX)/src/gos/freertos.o \
-    $(UGFX)/src/gtimer/gtimer.o \
-    $(UGFX)/src/gwin/console.o \
-    $(UGFX)/src/gwin/gwin.o \
-    $(UGFX)/src/gwin/gwm.o
 
-# Extra files needed when mainCREATE_SIMPLE_LED_FLASHER_DEMO_ONLY is defined 0
-COMPLEX_LED_OBJS += \
-    RegTest.o \
-    $(RTOS)/FreeRTOS/Source/timers.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/blocktim.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/BlockQ.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/countsem.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/death.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/dynamic.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/flop.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/GenQTest.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/integer.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/PollQ.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/semtest.o \
-    $(RTOS)/FreeRTOS/Demo/Common/Minimal/recmutex.o
+proj: clean
+proj: $(MAIN_OBJS)
+proj: OBJS = $(MAIN_OBJS)
+proj: $(BIN_IMAGE)
+proj: flash
 
-led-test: $(SIMPLE_LED_OBJS)
-led-test: CFLAGS += -DLED_TESTING
-led-test: CFLAGS += -DmainCREATE_SIMPLE_LED_FLASHER_DEMO_ONLY=1
-led-test: OBJS = $(SIMPLE_LED_OBJS)
-led-test: $(BIN_IMAGE)
-
-simple-led: $(SIMPLE_LED_OBJS)
-simple-led: CFLAGS += -DmainCREATE_SIMPLE_LED_FLASHER_DEMO_ONLY=1
-simple-led: OBJS = $(SIMPLE_LED_OBJS)
-simple-led: $(BIN_IMAGE)
-
-complex-led: $(SIMPLE_LED_OBJS)
-complex-led: $(COMPLEX_LED_OBJS)
-complex-led: CFLAGS += -DmainCREATE_SIMPLE_LED_FLASHER_DEMO_ONLY=0
-complex-led: OBJS = $(SIMPLE_LED_OBJS) $(COMPLEX_LED_OBJS)
-complex-led: $(BIN_IMAGE)
-
-lcd: $(LCD_OBJS)
-lcd: OBJS = $(LCD_OBJS)
-lcd: $(BIN_IMAGE)
-
-ugfx-basic: $(UGFX_BASIC_OBJS)
-ugfx-basic: CFLAGS += -DGFX_USE_OS_FREERTOS=TRUE
-ugfx-basic: OBJS = $(UGFX_BASIC_OBJS)
-ugfx-basic: $(BIN_IMAGE)
-
-ugfx: $(UGFX_OBJS)
-ugfx: CFLAGS += -DGFX_USE_OS_FREERTOS=TRUE -DGFX_NOTEPAD_DEMO=TRUE
-ugfx: OBJS = $(UGFX_OBJS)
-ugfx: $(BIN_IMAGE)
-
-all: simple-led
+all: proj
 
 $(BIN_IMAGE): $(EXECUTABLE)
 	$(OBJCOPY) -O binary $^ $@
@@ -301,11 +174,11 @@ endif
 
 clean:
 ifeq ($(VERBOSE_COMPILE),yes)
-	rm -f $(OBJS) $(SIMPLE_LED_OBJS) $(COMPLEX_LED_OBJS) $(LCD_OBJS) $(UGFX_BASIC_OBJS) $(UGFX_OBJS)
+	rm -f $(OBJS) $(MAIN_OBJS)
 	rm -f $(EXECUTABLE) $(BIN_IMAGE) $(HEX_IMAGE)
 	rm -f $(PROJECT).lst
 else
-	@rm -f $(OBJS) $(SIMPLE_LED_OBJS) $(COMPLEX_LED_OBJS) $(LCD_OBJS) $(UGFX_BASIC_OBJS) $(UGFX_OBJS)
+	@rm -f $(OBJS)  $(MAIN_OBJS)
 	@rm -f $(EXECUTABLE) $(BIN_IMAGE) $(HEX_IMAGE)
 	@rm -f $(PROJECT).lst
 	@echo Objects deleted.
