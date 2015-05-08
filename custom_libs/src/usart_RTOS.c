@@ -188,3 +188,37 @@ uint16_t cont_aux=0;
         cont_aux++;
     }
 }
+
+/* UART1-Interrupt */
+
+void USART1_IRQHandler(void) {
+
+    static BaseType_t pxHigherPriorityTaskWoken;
+
+    static char usart_aux;
+    static char usart_aux_tx;
+
+    if( USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
+    {
+        usart_aux = USART_ReceiveData(USART1); //read the received byte clears the interruption flag
+        xQueueSendToBackFromISR( xQueue_USART_Rx, &usart_aux, &pxHigherPriorityTaskWoken);
+    }
+
+    if(USART_GetITStatus(USART1, USART_IT_TXE))
+    {
+        if(xQueueReceiveFromISR( xQueue_USART_Tx, &usart_aux_tx ,&pxHigherPriorityTaskWoken))
+        {
+            USART_SendData(USART1, usart_aux_tx);
+        }
+        else
+        {
+            USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+        }
+
+        USART_ClearITPendingBit(USART1, USART_IT_TXE);
+    }
+
+    if( pxHigherPriorityTaskWoken == pdTRUE )
+        taskYIELD(); /* forces a context switch before exit the ISR */
+
+}
