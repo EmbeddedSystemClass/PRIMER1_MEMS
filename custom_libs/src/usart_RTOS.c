@@ -24,12 +24,15 @@
 
 #include "usart_RTOS.h"
 
+/*Queues*/
     /*USART Rx*/
     QueueHandle_t xQueue_USART_Rx;
 
     /*USART Tx*/
     QueueHandle_t xQueue_USART_Tx;
 
+/*Mutexes*/
+    /*USART (Write) Mutex*/
     SemaphoreHandle_t xMutex_USART;
 
 
@@ -104,15 +107,17 @@ void USART1PutChar(char put_char)
 
 void USART1PutString(char *put_string, uint8_t string_length)
 {
-    xSemaphoreTake( xMutex_USART, ( TickType_t ) portMAX_DELAY  );
 
     uint8_t tamanho =0;
 
+    xSemaphoreTake( xMutex_USART, ( TickType_t ) portMAX_DELAY  );
+
     while(tamanho<string_length){
-        USART1PutChar( put_string[tamanho]);
+        xQueueSendToBack( xQueue_USART_Tx, ( void * ) &put_string[tamanho],( TickType_t ) portMAX_DELAY  );
         tamanho++;
     }
 
+    USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
 
     xSemaphoreGive( xMutex_USART);
 }
@@ -187,4 +192,43 @@ uint16_t cont_aux=0;
         while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
         cont_aux++;
     }
+}
+
+
+
+/* UART1-Interrupt */
+
+void USART1_IRQHandler(void) {
+
+    static BaseType_t pxHigherPriorityTaskWoken;
+
+    static char usart_aux;
+    static char usart_aux_tx;
+
+    if( USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
+    {
+        usart_aux = USART_ReceiveData(USART1); //read the received byte clears the interruption flag
+        xQueueSendToBackFromISR( xQueue_USART_Rx, &usart_aux, &pxHigherPriorityTaskWoken);
+    }
+
+    if(USART_GetITStatus(USART1, USART_IT_TXE))
+    {
+        USART_ClearITPendingBit(USART1, USART_IT_TXE);
+
+        if(xQueueReceiveFromISR( xQueue_USART_Tx, &usart_aux_tx ,&pxHigherPriorityTaskWoken)==pdTRUE)
+        {
+            USART_SendData(USART1, usart_aux_tx);
+            if(xQueueIsQueueEmptyFromISR( xQueue_USART_Tx )==pdTRUE)
+                USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+        }
+        else
+        {
+            USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+        }
+
+    }
+
+    if( pxHigherPriorityTaskWoken == pdTRUE )
+        taskYIELD(); /* forces a context switch before exit the ISR */
+
 }

@@ -72,7 +72,8 @@ CFLAGS += -I$(CUSTOMLIBS)/inc
 
 #Here include all *.o needed from libraries to your current project
 MAIN_OBJS += \
-	$(CUSTOMLIBS)/src/usart_RTOS.o
+	$(CUSTOMLIBS)/src/usart_RTOS.o \
+	$(CUSTOMLIBS)/src/i2c_RTOS.o
 
 # Startup file
 SIMPLE_LED_OBJS += startup_stm32f429_439xx.o
@@ -101,7 +102,8 @@ MAIN_OBJS += \
     $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_exti.o \
     $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_syscfg.o \
     $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.o \
-    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_adc.o
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_adc.o \
+    $(STDP)/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dcmi.o
 
 
 

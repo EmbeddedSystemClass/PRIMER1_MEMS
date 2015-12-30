@@ -128,6 +128,8 @@
 
 /*My custom libraries includes */
 
+#include "custom_libs/inc/usart_RTOS.h"
+#include "custom_libs/inc/i2c_RTOS.h"
 /*
  * Configure the hardware.
  */
@@ -137,9 +139,6 @@ extern void vSetupHighFrequencyTimer( void );
 
 static void prvSetupMyLCD( void );
 
-static void prvSetupUSART1( uint32_t baudrate );
-
-static void prvSendMessageUSART1(char *message);
 /*
 
 static char USART1GetChar();
@@ -148,8 +147,6 @@ static void USART1PutChar(char put_char);
 static void USART1PutString(char *put_string, uint8_t string_length);
 */
 static void ADC_config();
-
-
 
 /* Task priorities. */
 #define mainFLASH_TASK_PRIORITY ( tskIDLE_PRIORITY + 1)
@@ -209,7 +206,7 @@ typedef struct
 
 
 
-static void cliques () {
+static void prvTaskClicks () {
 
     TickType_t xLastExecutionTime;
 
@@ -245,108 +242,82 @@ static void cliques () {
     }
 }
 
-static void message_print()
-{
-    TickType_t xLastExecutionTime;
 
-    xLastExecutionTime = xTaskGetTickCount();
-    uint8_t i=0,j=0;
-    char aux_char;
+static void prvTaski2cprint()  {
 
-    for( ;; )
-    {
-        aux_char = USART1GetChar();
-        LCD_DisplayChar(15*j,i*8, aux_char);
+    TickType_t xLastExecutionTime = xTaskGetTickCount();
 
-        USART1PutString("Escrito: ",8);
-        USART1PutChar(aux_char);
-        USART1PutString("\n\r",4);
-        vTaskDelay(2000 / portTICK_RATE_MS);
+    USART1Init(115200, 50);
+    init_I2C1();
 
+    TickType_t timestamp;
 
-        i++;
-
-        if(i%30==0)
-        {
-            i=0;
-            j++;
-        }
-    }
-}
-
-static prvSendTemp(){
-
-    TickType_t xLastExecutionTime;
-    xLastExecutionTime = xTaskGetTickCount();
-
-
-    adc_temp temp;
-
-    char buffer[20];
-
-
-
-    xQueue_Temp = xQueueCreate( 10 , sizeof(adc_temp));
-
-
-    for( ;; )
-    {
-        vTaskDelayUntil(&xLastExecutionTime, 250 / portTICK_RATE_MS);
-        ADC_SoftwareStartConv(ADC1);
-        while(ADC_GetFlagStatus(ADC1,ADC_FLAG_EOC)!= SET);
-
-        temp.temp = ADC_GetConversionValue(ADC1);
-        temp.tickcount = xTaskGetTickCount();
-
-        ADC_ClearFlag(ADC1, ADC_FLAG_EOC);
-
-
-        temp.temp = (temp.temp*165)/4096-25;
-
-
-
-
-        xQueueSendToBack(xQueue_Temp, &temp, portMAX_DELAY);
-/*
-        sprintf(buffer,"ADC %d \n\r", adc_value);
-        USART1PutString(buffer,15);
-*/
-    }
-}
-
-static void prvPrintTemp()  {
-
-        TickType_t xLastExecutionTime = xTaskGetTickCount();
-
-        adc_temp temp;
-        uint16_t tick;
-
-        USART1Init(115200, 30);
-
-
-        char buffer[25];
+    char buffer[10];
 
     for(;;)
     {
+        vTaskDelayUntil(&xLastExecutionTime, 20 / portTICK_RATE_MS);
 
-        xQueueReceive(xQueue_Temp, &temp, portMAX_DELAY);
-        vTaskDelay(250 / portTICK_RATE_MS);
-
-        tick = xTaskGetTickCount();
-
-        tick = tick - temp.tickcount;
-
-        sprintf(buffer, "%d %d \r\n", tick, temp.temp);
+        timestamp = xTaskGetTickCount();
+        sprintf(buffer,"%d", timestamp);
         USART1PutString(buffer, strlen(buffer));
-        LCD_DisplayStringLine(Line5, buffer );
 
+        I2C_printf(0xD0," amb=%d  %d %d %d %d %d %d %d %d \r\n", 0x01, 0x02, 0x03, 0x04,0x05,0x06,0x07, 0x08, 0x09);
+
+    }
+}
+
+static void prvTaskLed1Hz(){
+
+    TickType_t xLastExecutionTime = xTaskGetTickCount();
+
+
+    init_I2C1();
+
+    for(;;){
+        vTaskDelayUntil( &xLastExecutionTime, 500/ portTICK_RATE_MS);
+
+        GPIO_WriteBit(GPIOG, GPIO_Pin_13, (1-GPIO_ReadOutputDataBit(GPIOG, GPIO_Pin_13)));
+
+
+
+    }
+}
+
+static void prvTaskI2CRead(){
+
+    TickType_t xLastExecutionTime = xTaskGetTickCount();
+
+
+    init_I2C1();
+
+    for(;;){
+        vTaskDelayUntil( &xLastExecutionTime, 500/ portTICK_RATE_MS);
+
+
+
+    }
+
+}
+
+static void prvTaskLCD() {
+
+
+    TickType_t xLastExecutionTime = xTaskGetTickCount();
+
+    char buffer[30];
+
+    for(;;){
+        vTaskDelayUntil( &xLastExecutionTime, 500/ portTICK_RATE_MS);
+
+        sprintf(buffer, "Pedro");
+        LCD_DisplayStringLine( Line1 , buffer);
 
 
     }
 
 
 }
-
 
 
 
@@ -355,31 +326,22 @@ int main( void )
 
     prvSetupHardware();
 
-    //xTaskCreate(message_print, "print",configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY, &HandleTask1);
-    xTaskCreate(cliques, "cliques",configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY, &HandleTask2);
-    xTaskCreate(prvSendTemp, "send_temp",3*configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY, &HandleTask3);
-    xTaskCreate(prvPrintTemp, "print_temp",3*configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY, &HandleTask4);
 
-    //xLCDQueue = xQueueCreate( 16, sizeof( char * ) );
-    //xTaskCreate( prvLCDTask, "LCD", configMINIMAL_STACK_SIZE * 2, NULL, mainFLASH_TASK_PRIORITY1, NULL );
-
-    //xMutex_USART = xSemaphoreCreateMutex();
-    //xButtonPressed_SEMBIN = xSemaphoreCreateBinary();
+    /* Task blink*/
+    xTaskCreate(prvTaskLed1Hz, "led1Hz",configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY, &HandleTask2);
 
 
-	//xTaskCreate( prvLcdTask, "Lcd", 2*configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY, &HandleTask1);
-    //xTaskCreate( prvFlashTask, "Flash", configMINIMAL_STACK_SIZE, NULL, mainFLASH_TASK_PRIORITY, &HandleTask2 );
-    //xTaskCreate( prvUsartTask, "Usart", configMINIMAL_STACK_SIZE, NULL, mainUSART_TASK_PRIORITY, &HandleTask3 );
-    //xTaskCreate( prvTopTask4, "top", configMINIMAL_STACK_SIZE * 2, NULL, mainFLASH_TASK_PRIORITY1+1, NULL );
-    //xTaskCreate( prvButtonPressed, "Wait button", configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY+1, NULL );
-    //xTaskCreate( prvToogleLed, "Toogle Led", configMINIMAL_STACK_SIZE, NULL, mainLCD_TASK_PRIORITY+1, NULL );
+    /* LCD */
+    xTaskCreate(prvTaskLCD, "lcd",configMINIMAL_STACK_SIZE*2, NULL, mainLCD_TASK_PRIORITY, &HandleTask1);
+
+
+    /* Task to output all I2C data at 50 Hz*/
+    xTaskCreate(prvTaski2cprint, "i2c_print",configMINIMAL_STACK_SIZE*2, NULL, mainLCD_TASK_PRIORITY, &HandleTask4);
 
 
 	/* Start the scheduler. */
 	vTaskStartScheduler();
 
-	/* Will only get here if there was insufficient memory to create the idle
-	   task.  The idle task is created within vTaskStartScheduler(). */
 	for( ;; );
 }
 
@@ -463,7 +425,7 @@ static void prvSetupHardware( void )
     /* Initialise the IO used for the LED outputs. */
     vParTestInitialise();
 
-    ADC_config();
+    //ADC_config();
 }
 
 
@@ -481,36 +443,6 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 /*-----------------------------------------------------------*/
 
 
-
-void ADC_config() {
-    //enable ADC1 clock
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-    ADC_CommonInitTypeDef ADC_CommonInitStructure;
-
-    ADC_InitTypeDef ADC_InitStructure;
-
-    /* ADC Common Init **********************************************************/
-    ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
-    ADC_CommonInit(&ADC_CommonInitStructure);
-
-      /* ADC1 Init ****************************************************************/
-    ADC_InitStructure.ADC_ScanConvMode = DISABLE;
-    ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
-    ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-    ADC_Init(ADC1, &ADC_InitStructure);
-
-    //activate temperature sensor
-    ADC_TempSensorVrefintCmd(ENABLE);
-
-    ADC_RegularChannelConfig(ADC1, ADC_Channel_16, 1, ADC_SampleTime_56Cycles);
-
-    //Enable ADC1
-    ADC_Cmd(ADC1, ENABLE);
-
-
-}
-
-
 static void prvSetupMyLCD( void )
 {
 
@@ -526,5 +458,3 @@ static void prvSetupMyLCD( void )
     LCD_SetTextColor(Black);
 
 }
-
-
