@@ -194,8 +194,11 @@ uint16_t cont_aux=0;
     }
 }
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 3c634e9d7419a9588772ee9a81cabc54f53872fc
 /* UART1-Interrupt */
 
 void USART1_IRQHandler(void) {
@@ -213,6 +216,7 @@ void USART1_IRQHandler(void) {
 
     if(USART_GetITStatus(USART1, USART_IT_TXE))
     {
+<<<<<<< HEAD
         USART_ClearITPendingBit(USART1, USART_IT_TXE);
 
         if(xQueueReceiveFromISR( xQueue_USART_Tx, &usart_aux_tx ,&pxHigherPriorityTaskWoken)==pdTRUE)
@@ -220,12 +224,21 @@ void USART1_IRQHandler(void) {
             USART_SendData(USART1, usart_aux_tx);
             if(xQueueIsQueueEmptyFromISR( xQueue_USART_Tx )==pdTRUE)
                 USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+=======
+        if(xQueueReceiveFromISR( xQueue_USART_Tx, &usart_aux_tx ,&pxHigherPriorityTaskWoken))
+        {
+            USART_SendData(USART1, usart_aux_tx);
+>>>>>>> 3c634e9d7419a9588772ee9a81cabc54f53872fc
         }
         else
         {
             USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
         }
 
+<<<<<<< HEAD
+=======
+        USART_ClearITPendingBit(USART1, USART_IT_TXE);
+>>>>>>> 3c634e9d7419a9588772ee9a81cabc54f53872fc
     }
 
     if( pxHigherPriorityTaskWoken == pdTRUE )
